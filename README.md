@@ -17,7 +17,8 @@
 $ git clone https://github.com/VYWL/GB-Backend-docker
 $ # .env 파일을 최상단, 그리고 Django 내부에 설정.
 $ sudo docker-compose up --build
-```r
+```
+
 
 ### 기타사항
 - 문제 있을시 연락.
