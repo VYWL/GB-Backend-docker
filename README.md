@@ -1,7 +1,7 @@
 ## GB-Backend-docker
 밥브리타임 RESTful API Back-end Server 구현하기 😉
 
-#### Generate FW
+#### Back-end : Django + MySQL + Docker
 - [x] MySQL DB와의 연동 (Board, Article, and Comments)
 - [x] 일부 버그 Fix (실행 안되던 문제)
   - MySQL 8.x 버전대라서, Password 을 암호 관련 인증하는 방식을 변경함
