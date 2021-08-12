@@ -1,0 +1,52 @@
+# 파일 규격 버전
+version: '3'
+# 이 항목 밑에 실행하려는 컨테이너들을 정의
+services:
+    # 서비스 명
+    db:
+        build:
+            context: ./Database
+            dockerfile: ./Dockerfile
+        # 사용할 이미지
+        image: ggulbob-mysql
+        # 컨테이너 이름 설정
+        container_name: ggulbob-mysql-container
+        # 접근 포트 설정 (컨테이너 외부:컨테이너 내부)
+        ports:
+            - '3306:3306'
+        # -e 옵션
+        environment:
+            # MYSQL 패스워드 설정 옵션
+            MYSQL_ROOT_PASSWORD: '${MYSQL_ROOT_PASSWORD}'
+            # 데이터베이스 생성
+            MYSQL_DATABASE: '${DATABASE_NAME}'
+        # 명령어 실행 (한글 인코딩 관련)
+        command:
+            [
+                'mysqld',
+                '--default-authentication-plugin=mysql_native_password',
+                '--character-set-server=utf8mb4',
+                '--collation-server=utf8mb4_unicode_ci',
+            ]
+        volumes:
+            # -v 옵션 (다렉토리 마운트 설정)
+            - ./mysql_dir:/var/lib/mysql
+
+    web:
+        build:
+            context: ./Django
+            dockerfile: ./Dockerfile
+        image: ggulbob-django
+        container_name: ggulbob-django-container
+        restart: always
+        ports:
+            - '8000:8000'
+        environment:
+            - DJANGO_DEBUG=True
+            - DJANGO_DB_HOST=db
+            - DJANGO_DB_PORT=3306
+            - DJANGO_DB_NAME=${DATABASE_NAME}
+            - DJANGO_DB_USERNAME=${DATABASE_USER}
+            - DJANGO_DB_PASSWORD=${DATABASE_PASS}
+        depends_on:
+            - db
