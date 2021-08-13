@@ -6,7 +6,7 @@
 
 -   [x] MySQL DB와의 연동 (Board, Article, and Comments)
 -   [x] 일부 버그 Fix (실행 안되던 문제)
-    -   MySQL 8.x 버전대라서, Password 을 암호 관련 인증하는 방식을 변경함
+    -   MySQL 8.x 버전대라서, Password 암호화 관련 인증하는 방식을 변경함
     -   오탈자 👉 비밀번호가 잘못 적혀있는 부분을 수정
     -   `django-cors-headers` 패키지가 설치되지 않았던 부분 수정
 -   [ ] RESTful API Endpoint 설계 (미완)
