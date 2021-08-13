@@ -30,9 +30,9 @@ class Article(models.Model):
     isanony = models.BooleanField(db_column='isAnony', default=True)  # Field name made lowercase.
     isdel = models.BooleanField(db_column='isDel', default=False)  # Field name made lowercase.
 
-    # class Meta:
-    #     managed = False
-    #     db_table = 'Article'
+    class Meta:
+        managed = False
+        db_table = 'Article'
     
     def __str__(self):
         return '[articleID, title] : {}, {}'.format(self.articleid, self.title)
@@ -42,9 +42,9 @@ class Board(models.Model):
     boardname = models.CharField(db_column='boardName', max_length=20)  # Field name made lowercase.
     boardid = models.AutoField(db_column='boardID', primary_key=True)  # Field name made lowercase.
 
-    # class Meta:
-        # managed = False
-        # db_table = 'Board'
+    class Meta:
+        managed = False
+        db_table = 'Board'
 
     def __str__(self):
         return '[{}] {}'.format(self.boardid, self.boardname)
@@ -63,6 +63,6 @@ class Comment(models.Model):
     isanony = models.BooleanField(db_column='isAnony', default=True)  # Field name made lowercase.
     isreply = models.BooleanField(db_column='isReply', default=False)  # Field name made lowercase.
 
-    # class Meta:
-    #     managed = False
-    #     db_table = 'Comment'
+    class Meta:
+        managed = False
+        db_table = 'Comment'
