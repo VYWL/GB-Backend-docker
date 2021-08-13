@@ -16,15 +16,31 @@ RUN pip3 install -r requirements.txt
 
 RUN django-admin startproject backend .
 
+RUN python3 manage.py startapp api
+
+ADD api /my_app_dir/api
+
+#RUN python3 manage.py inspectdb > api/models.py
+
+
+
 WORKDIR /my_app_dir/backend/
+
 ADD settings.py ./settings.py
 ADD .env ./.env
+
+ADD urls.py ./urls.py
+
+WORKDIR /my_app_dir/
+
+#RUN python3 manage.py makemigrations
+#RUN python3 manage.py migrate
 
 ###
 # 우리가 만든 프로젝트를 복사해서 넣어주어야 함.
 ###
 
-WORKDIR /my_app_dir/
+
 
 EXPOSE 8000
 
@@ -32,7 +48,10 @@ RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSI
     && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
     && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
 
+
+
 CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
+
 
 ENTRYPOINT ["dockerize", "-wait", "tcp://db:3306", "-timeout", "10s" ]
 
