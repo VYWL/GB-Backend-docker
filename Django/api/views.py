@@ -1,10 +1,12 @@
 from django.db.models import query
 from django.shortcuts import render, get_object_or_404
+from django.core import serializers
 ##
 from django.http import HttpResponse, JsonResponse
 ##
 # Create your views here.
-from rest_framework import viewsets
+import json
+from rest_framework import viewsets, status
 from .serializers import BoardSerializer, CommentSerializer,  ArticleSerializer, LikeLogSerializer
 from .models import Board, Comment, Article, LikeLog
 
@@ -14,6 +16,29 @@ from rest_framework.response import Response
 class ArticleView(viewsets.ModelViewSet):
     queryset = Article.objects.raw('SELECT * FROM Article WHERE isDel=0')
     serializer_class = ArticleSerializer
+
+    def update(self, request, pk):
+        article = Article.objects.get(articleid=pk)
+        data = request.data
+
+        isValid = article.password == data["password"]
+
+        msg = "fail"
+        
+        if isValid :
+            article.title = data.get('title', article.title)
+            article.content = data.get('content', article.content)
+            article.isdel = data.get('isdel', article.isdel)
+
+            if(article.isedit):
+                article.isedit = True
+
+            article.save()
+            msg = "success"
+        
+        return Response({"msg" : msg})
+        
+            
 
     def retrieve(self, request, pk=None):
         queryset = Article.objects.all()
@@ -28,11 +53,11 @@ class ArticleView(viewsets.ModelViewSet):
         article = Article.objects.get(articleid=pk)
 
         # password_valid
-        isCorrect = article.password == request.data['password']
+        isValid = article.password == request.data['password']
 
-        msg = "failed"
+        msg = "fail"
 
-        if isCorrect: 
+        if isValid : 
             article.isdel = True
             article.save()
             msg = "success"
@@ -40,7 +65,7 @@ class ArticleView(viewsets.ModelViewSet):
         return Response({'msg' : msg})
 
 class BoardView(viewsets.ModelViewSet):
-    queryset = Board.objects.raw('SELECT * FROM Board WHERE isDel=0')
+    queryset = Board.objects.raw('SELECT * FROM Board')
     serializer_class = BoardSerializer
     
     def perform_create(self, serializer):
@@ -49,6 +74,25 @@ class BoardView(viewsets.ModelViewSet):
 class CommentView(viewsets.ModelViewSet):
     queryset = Comment.objects.raw('SELECT * FROM Comment WHERE isDel=0')
     serializer_class = CommentSerializer
+
+    def create(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        self.perform_create(serializer)
+
+        comment = Comment.objects.get(commentid=serializer.data["commentid"])
+        
+        if(comment.parentcid == 0): 
+            comment.parentcid = comment.commentid
+            comment.save()
+
+        comment_result = serializers.serialize('json', [comment, ])
+        comment_result_data = json.loads(comment_result)[0]["fields"]
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(comment_result_data, status=status.HTTP_201_CREATED, headers=headers)
+
 
     def retrieve(self, request, pk):
         qusrystring = 'SELECT * FROM Comment WHERE articleID={} AND isDel=0 \

@@ -51,6 +51,7 @@ class Comment(models.Model):
     isanony = models.BooleanField(db_column='isAnony', default=True)  # Field name made lowercase.
     isreply = models.BooleanField(db_column='isReply', default=False)  # Field name made lowercase.
 
+    
     class Meta:
         managed = False
         db_table = 'Comment'
