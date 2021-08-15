@@ -1,37 +1,18 @@
 from django.urls import path, include
 from rest_framework.urlpatterns import format_suffix_patterns
-from .views import PostView, BoardView, CommentView, ArticleView
-
-#####
-# from .views import article_list
-######
-
+from .views import BoardView, CommentView, ArticleView, LikeLogView
 
 article_list = ArticleView.as_view({
-   'post': 'create',
-   'get': 'list',
+    'post': 'create',
+    'get': 'list',
 })
 
 article_detail = ArticleView.as_view({
-   'get': 'retrieve',
-   'put': 'update',
-   'patch': 'partial_update',
-   'delete': 'destroy'
-})
-
-post_list = PostView.as_view({
-    'post': 'create',
-    'get': 'list'
-})
-
-post_detail = PostView.as_view({
     'get': 'retrieve',
     'put': 'update',
     'patch': 'partial_update',
     'delete': 'destroy'
 })
-
-
 
 board_list = BoardView.as_view({
     'post': 'create',
@@ -50,21 +31,24 @@ comment_list = CommentView.as_view({
     'get': 'list',
 })
 
-comment_detail = CommentView.as_view({
+comment_list_detail = CommentView.as_view({
     'get': 'retrieve',
-    'put': 'update',
-    'patch': 'partial_update',
-    'delete': 'destroy'
+    'delete' : 'destroy'
 })
+
+like_list = LikeLogView.as_view({
+    'post': 'create',
+    'get' : 'list',
+})
+
 
 urlpatterns = format_suffix_patterns([
     path('auth/', include('rest_framework.urls', namespace='rest_framework')),
-    path('posts/', post_list, name='post_list'),
-    path('posts/<int:pk>/', post_detail, name='post_detail'),
     path('article/', article_list, name='article_list'),
     path('article/<int:pk>/', article_detail, name='article_detail'),
     path('board/', board_list, name='board_list'),
     path('board/<int:pk>/', board_detail, name='board_detail'),
     path('comment/', comment_list, name='comment_list'),
-    path('comment/<int:pk>/', comment_detail, name='comment_detail'),
+    path('comment/<int:pk>', comment_list_detail, name='comment_list_detail'),
+    path('like/', like_list, name='like_list'),
 ])

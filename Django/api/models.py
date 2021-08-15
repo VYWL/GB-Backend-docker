@@ -3,18 +3,6 @@ from django.contrib.auth.models import User
 from django.db.models.deletion import CASCADE
 from django.contrib.auth.hashers import make_password
 
-# Create your models here.
-# 이건 그냥 블로그에있던 테스트용 post 클래스임.
-class Post(models.Model):
-    # 이런 Field 들을 만들 수 있다.
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    title = models.CharField(max_length=144)
-    subtitle = models.CharField(max_length=155, blank=True)
-    content = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return '[{}] {}'.format(self.user.username, self.title)
 
 class Article(models.Model):
     boardid = models.ForeignKey('Board', models.DO_NOTHING, db_column='boardID')  # Field name made lowercase.
@@ -51,7 +39,7 @@ class Board(models.Model):
 
 
 class Comment(models.Model):
-    articleid = models.ForeignKey(Article, models.DO_NOTHING, db_column='articleID')  # Field name made lowercase.
+    articleid = models.ForeignKey('Article', models.DO_NOTHING, db_column='articleID')  # Field name made lowercase.
     commentid = models.AutoField(db_column='commentID', primary_key=True)  # Field name made lowercase.
     content = models.CharField(max_length=2000)
     timestamp = models.DateTimeField(db_column='timeStamp', null=True)  # Field name made lowercase.
@@ -66,3 +54,14 @@ class Comment(models.Model):
     class Meta:
         managed = False
         db_table = 'Comment'
+
+        
+class LikeLog(models.Model):
+    articleid = models.ForeignKey('Article', models.DO_NOTHING, db_column='articleID', blank=True, null=True)  # Field name made lowercase.
+    commentid = models.ForeignKey('Comment', models.DO_NOTHING, db_column='commentID', blank=True, null=True)  # Field name made lowercase.
+    likeid = models.AutoField(db_column='likeID', primary_key=True)
+    isunlike = models.BooleanField(db_column='isUnlike', default=False)  # Field name made lowercase.
+
+    class Meta:
+        managed = False
+        db_table = 'LikeLog'
