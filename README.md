@@ -10,7 +10,7 @@
     -   오탈자 👉 비밀번호가 잘못 적혀있는 부분을 수정
     -   `django-cors-headers` 패키지가 설치되지 않았던 부분 수정
 -   [x] RESTful API Endpoint 설계
--   [ ] Front-end와의 동기화 (미완)
+-   [x] Front-end와의 동기화
 -   [x] 나머지 Rule 및 Filter Setting
 -   [x] ELK Stack과 Log 연동
 

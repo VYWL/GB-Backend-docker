@@ -18,6 +18,7 @@ CREATE TABLE Article (
     timeStamp TIMESTAMP DEFAULT now(),
     vote INT(10) ,
     unlike INT(10),
+    commentcount INT(10),
     writer CHAR(20),
     isAnony BOOLEAN NOT NULL DEFAULT 1,
     isDel BOOLEAN NOT NULL DEFAULT 0,
@@ -38,6 +39,7 @@ CREATE TABLE Comment (
     isAnony BOOLEAN NOT NULL DEFAULT 1,
     isReply BOOLEAN DEFAULT 0,
     isDel BOOLEAN NOT NULL DEFAULT 0,
+    isVisible BOOLEAN NOT NULL DEFAULT 1,
     password VARCHAR(32),
     FOREIGN KEY (articleID) REFERENCES Article (articleID)
 );

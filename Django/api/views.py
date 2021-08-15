@@ -17,6 +17,13 @@ class ArticleView(viewsets.ModelViewSet):
     queryset = Article.objects.raw('SELECT * FROM Article WHERE isDel=0')
     serializer_class = ArticleSerializer
 
+    def list(self, request):
+        queryset = Article.objects.raw('SELECT * FROM Article WHERE isDel=0 \
+                                        ORDER BY timestamp DESC')
+        serializer = ArticleSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+
     def update(self, request, pk):
         article = Article.objects.get(articleid=pk)
         data = request.data
@@ -30,7 +37,7 @@ class ArticleView(viewsets.ModelViewSet):
             article.content = data.get('content', article.content)
             article.isdel = data.get('isdel', article.isdel)
 
-            if(article.isedit):
+            if(article.isedit == False):
                 article.isedit = True
 
             article.save()
@@ -38,8 +45,6 @@ class ArticleView(viewsets.ModelViewSet):
         
         return Response({"msg" : msg})
         
-            
-
     def retrieve(self, request, pk=None):
         queryset = Article.objects.all()
         article = get_object_or_404(queryset, pk=pk)
@@ -60,6 +65,10 @@ class ArticleView(viewsets.ModelViewSet):
         if isValid : 
             article.isdel = True
             article.save()
+
+            deadComment = Comment.objects.filter(articleid=pk)
+            deadComment.update(isdel=True)
+
             msg = "success"
         
         return Response({'msg' : msg})
@@ -90,12 +99,16 @@ class CommentView(viewsets.ModelViewSet):
         comment_result = serializers.serialize('json', [comment, ])
         comment_result_data = json.loads(comment_result)[0]["fields"]
 
+        article = Article.objects.get(articleid=serializer.data["articleid"])
+        article.commentcount = article.commentcount + 1
+        article.save()
+
         headers = self.get_success_headers(serializer.data)
         return Response(comment_result_data, status=status.HTTP_201_CREATED, headers=headers)
 
 
     def retrieve(self, request, pk):
-        qusrystring = 'SELECT * FROM Comment WHERE articleID={} AND isDel=0 \
+        qusrystring = 'SELECT * FROM Comment WHERE articleID={} AND isVisible=1 \
                        ORDER BY parentCID, timestamp ASC'.format(pk)
         queryset = Comment.objects.raw(qusrystring)
         serializer = CommentSerializer(queryset, many=True)
@@ -107,10 +120,28 @@ class CommentView(viewsets.ModelViewSet):
         # password_valid
         isCorrect = comment.password == request.data['password']
 
-        msg = "failed"
+        msg = "fail"
 
         if isCorrect: 
             comment.isdel = True
+
+            parentcid = int('{}'.format(comment.parentcid))
+            childListLength = len(list(Comment.objects.raw('SELECT * FROM Comment WHERE parentCID={} AND isReply=1 AND isVisible=1'.format(parentcid))))
+
+            if comment.isreply != True :
+                if childListLength == 0 :
+                    comment.isvisible = False
+            else :
+                if childListLength == 1 :
+                    parentComment = Comment.objects.get(commentid=parentcid)
+                    parentComment.isvisible = False
+                    parentComment.save()
+                comment.isvisible = False
+
+            article = Article.objects.get(articleid=request.data["articleid"])
+            article.commentcount = article.commentcount - 1
+            article.save()
+            
             comment.save()
             msg = "success"
         

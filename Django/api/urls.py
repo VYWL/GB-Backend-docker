@@ -49,6 +49,6 @@ urlpatterns = format_suffix_patterns([
     path('board/', board_list, name='board_list'),
     path('board/<int:pk>', board_detail, name='board_detail'),
     path('comment/', comment_list, name='comment_list'),
-    path('comment/<int:pk>', comment_list_detail, name='comment_list_detail'),
+    path('comment/<int:pk>/', comment_list_detail, name='comment_list_detail'),
     path('like/', like_list, name='like_list'),
 ])

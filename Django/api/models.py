@@ -12,6 +12,7 @@ class Article(models.Model):
     timestamp = models.DateTimeField(db_column='timeStamp', null=True)  # Field name made lowercase.
     vote = models.IntegerField(default=0)
     unlike = models.IntegerField(default=0)
+    commentcount = models.IntegerField(default=0)
     writer = models.CharField(max_length=20, blank=True, null=True)
     password = models.CharField(max_length=32, default="")
     isedit = models.BooleanField(db_column='isEdit', default=False)  # Field name made lowercase.
@@ -50,6 +51,7 @@ class Comment(models.Model):
     isdel = models.BooleanField(db_column='isDel', default=False)  # Field name made lowercase.
     isanony = models.BooleanField(db_column='isAnony', default=True)  # Field name made lowercase.
     isreply = models.BooleanField(db_column='isReply', default=False)  # Field name made lowercase.
+    isvisible = models.BooleanField(db_column='isVisible', default=True)
 
     
     class Meta:
