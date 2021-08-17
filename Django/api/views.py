@@ -1,14 +1,17 @@
+from django.core.files.storage import FileSystemStorage
 from django.db.models import query
+from django.http.response import FileResponse
 from django.shortcuts import render, get_object_or_404
 from django.core import serializers
+from django.views.generic.detail import SingleObjectMixin
 ##
 from django.http import HttpResponse, JsonResponse
 ##
 # Create your views here.
-import json
+import json, copy
 from rest_framework import viewsets, status
-from .serializers import BoardSerializer, CommentSerializer,  ArticleSerializer, LikeLogSerializer
-from .models import Board, Comment, Article, LikeLog
+from .serializers import ArticleReturnSerializer, BoardSerializer, CommentReturnSerializer, CommentSerializer,  ArticleSerializer, FileReturnSerializer, FileSerializer, ImageReturnSerializer, ImageSerializer, LikeLogSerializer
+from .models import Board, Comment, Article, File, Image, LikeLog
 
 ###
 from rest_framework.response import Response
@@ -17,10 +20,18 @@ class ArticleView(viewsets.ModelViewSet):
     queryset = Article.objects.raw('SELECT * FROM Article WHERE isDel=0')
     serializer_class = ArticleSerializer
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response({"msg" : "success", "articleid": serializer.data["articleid"]}, status=status.HTTP_201_CREATED, headers=headers)
+
+
     def list(self, request):
         queryset = Article.objects.raw('SELECT * FROM Article WHERE isDel=0 \
                                         ORDER BY timestamp DESC')
-        serializer = ArticleSerializer(queryset, many=True)
+        serializer = ArticleReturnSerializer(queryset, many=True)
         return Response(serializer.data)
 
 
@@ -48,7 +59,7 @@ class ArticleView(viewsets.ModelViewSet):
     def retrieve(self, request, pk=None):
         queryset = Article.objects.all()
         article = get_object_or_404(queryset, pk=pk)
-        serializer = ArticleSerializer(article)
+        serializer = ArticleReturnSerializer(article)
         return Response(serializer.data)
 
     def perform_create(self, serializer):
@@ -82,7 +93,7 @@ class BoardView(viewsets.ModelViewSet):
  
 class CommentView(viewsets.ModelViewSet):
     queryset = Comment.objects.raw('SELECT * FROM Comment WHERE isDel=0')
-    serializer_class = CommentSerializer
+    serializer_class = CommentReturnSerializer
 
     def create(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -111,7 +122,7 @@ class CommentView(viewsets.ModelViewSet):
         qusrystring = 'SELECT * FROM Comment WHERE articleID={} AND isVisible=1 \
                        ORDER BY parentCID, timestamp ASC'.format(pk)
         queryset = Comment.objects.raw(qusrystring)
-        serializer = CommentSerializer(queryset, many=True)
+        serializer = CommentReturnSerializer(queryset, many=True)
         return Response(serializer.data)
 
     def destroy(self, request, pk):
@@ -190,5 +201,142 @@ class LikeLogView(viewsets.ModelViewSet):
         else:
             return Response({'msg' : "fail"})
             
+    def perform_create(self, serializer):
+        serializer.save()
+
+class FileView(viewsets.ModelViewSet):
+    queryset = File.objects.raw('SELECT * FROM File')
+    serializer_class = FileSerializer
+
+    def create(self, request):
+        receivedData = request.data
+
+        if(receivedData["isnew"]):
+            serializer = self.get_serializer(data=receivedData)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+
+            articleid = request.data["articleid"]
+            article = Article.objects.get(articleid=articleid)
+            article.filecount = article.filecount + 1
+            article.save()
+
+            headers = self.get_success_headers(serializer.data)
+            return Response({"msg" : "success"}, status=status.HTTP_201_CREATED, headers=headers)
+        
+        else:
+            file = File.objects.get(fid=receivedData['fid'])
+            file.isdel = receivedData['isdel']
+            file.save()
+
+            if(file.isdel):
+                article = Article.objects.get(articleid=file.articleid)
+                article.fileCount = article.fileCount - 1
+                article.save()
+
+            return Response({"msg" : "success"}, status=status.HTTP_200_OK)
+
+    def retrieve(self, request, pk):
+        queryset = File.objects.raw('SELECT * FROM File WHERE isDel=0 AND articleID={} \
+                                     ORDER BY timestamp ASC'.format(pk))
+        serializer = FileReturnSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def get(self, request, uuid):
+        file = File.objects.get(uuid=uuid)
+
+        file_path = file.file.path
+        # file_type = file.content_type
+        fs = FileSystemStorage(file_path)
+        response = FileResponse(fs.open(file_path, 'rb'))
+        response['Content-Disposition'] = f'attachment; filename={file.get_filename()}'
+        return response
+
+    def update(self, request):
+        receivedData = request.data
+
+        file = File.objects.get(fid=receivedData['fid'])
+        file.isdel = True if receivedData["isdel"] == 'true' else False
+        file.save()
+        msg = "data modificated"
+
+        if(file.isdel):
+            article = Article.objects.get(articleid=receivedData['articleid'])
+            article.filecount = article.filecount - 1
+            article.save()
+            msg = "successfully applied"
+
+        return Response({"msg" : "success", "detail": msg}, status=status.HTTP_200_OK)
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+
+    
+class ImageView(viewsets.ModelViewSet):
+    queryset = Image.objects.raw('SELECT * FROM Image')
+    serializer_class = ImageSerializer
+
+    def create(self, request):
+        receivedData = request.data
+
+        serializer = self.get_serializer(data=receivedData)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        image = Image.objects.get(fid=serializer.data["fid"])
+        image.isnew = False
+        image.save()
+
+        articleid = serializer.data["articleid"]
+        article = Article.objects.get(articleid=articleid)
+
+        if(article.imagecount == 0):
+            article.thumbnail = '/api/upload/image/{}'.format(image.uuid)
+
+        article.imagecount = article.imagecount + 1
+        article.save()
+        msg = "data generated"
+
+
+        headers = self.get_success_headers(serializer.data)
+        return Response({"msg" : "success", "detail": msg}, status=status.HTTP_201_CREATED, headers=headers)
+
+    def update(self, request):
+        receivedData = request.data
+
+        file = Image.objects.get(fid=receivedData['fid'])
+        file.isdel = True if receivedData["isdel"] == 'true' else False
+        file.save()
+        msg = "data modificated"
+
+        if(file.isdel):
+            article = Article.objects.get(articleid=receivedData['articleid'])
+            article.imagecount = article.imagecount - 1
+
+            imageQS = Image.objects.filter(articleid=receivedData['articleid']) & Image.objects.filter(isdel=False)
+            image = imageQS.order_by('timestamp')[0]
+
+            article.thumbnail = '/api/upload/image/{}'.format(image.uuid)
+            article.save()
+            msg = "successfully applied"
+
+        return Response({"msg" : "success", "detail": msg}, status=status.HTTP_200_OK)
+
+    def retrieve(self, request, pk):
+        queryset = Image.objects.raw('SELECT * FROM Image WHERE isDel=0 AND articleID={} \
+                                      ORDER BY timestamp ASC'.format(pk))
+        serializer = ImageReturnSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def get(self, request, uuid):
+        image = Image.objects.get(uuid=uuid)
+
+        file_path = image.file.path
+        fs = FileSystemStorage(file_path)
+        response = FileResponse(fs.open(file_path, 'rb'))
+        response['Content-Disposition'] = f'attachment; filename={image.get_filename()}'
+        return response
+        
     def perform_create(self, serializer):
         serializer.save()

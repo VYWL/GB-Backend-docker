@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 from pathlib import Path
 import environ
+import os
 
 # Initialise environment variables
 env = environ.Env()
@@ -47,6 +48,9 @@ INSTALLED_APPS = [
     'api',
 ]
 
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -81,6 +85,8 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 CORS_ORIGIN_WHITELIST = [   
     'http://localhost:3000',
     'http://localhost:8000',
+    'http://localhost:80',
+    'http://localhost',
 ]
 
 # Database
